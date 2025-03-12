@@ -1,0 +1,14 @@
+# Ignore environment folder
+llama_env/
+
+# Ignore API keys and sensitive data
+.env
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Streamlit temporary files (optional)
+.streamlit/
