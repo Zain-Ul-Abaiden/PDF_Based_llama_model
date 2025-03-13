@@ -12,3 +12,10 @@ __pycache__/
 
 # Ignore Streamlit temporary files (optional)
 .streamlit/
+
+# Ignore logs and temporary files
+logs/
+*.log
+
+# Ignore FAISS index files (if any)
+*.faiss

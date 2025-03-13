@@ -1,7 +1,11 @@
 import streamlit as st
 import os
 import time
+import pytesseract
 from dotenv import load_dotenv
+from pdf2image import convert_from_path
+from PIL import Image
+import fitz  # PyMuPDF for fallback rendering
 from langchain_groq import ChatGroq
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -10,6 +14,9 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_core.documents import Document  # Ensure correct document format
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +26,7 @@ if not groq_api_key:
     st.error("❌ Missing GROQ API key! Please set GROQ_API_KEY in your environment variables.")
     st.stop()
 
-st.title("📄 Single PDF Question Answering with Llama3 (ChatGroq)")
+st.title("📄 Scanned PDF Question Answering with Llama3 (ChatGroq)")
 
 # Initialize LLM
 llm = ChatGroq(groq_api_key=groq_api_key, model_name="Llama3-8b-8192")
@@ -33,8 +40,39 @@ prompt = ChatPromptTemplate.from_messages([
 # File uploader for a single PDF
 uploaded_file = st.file_uploader("📤 Upload a PDF file", type=["pdf"], accept_multiple_files=False)
 
+def extract_text_from_images(pdf_path):
+    """Extract text from scanned PDF images using OCR.
+       Try pdf2image first; if it fails, use PyMuPDF (fitz) as a fallback.
+    """
+    poppler_path = r"C:\poppler-24.08.0\Library\bin"
+    
+    try:
+        # Try using pdf2image to convert PDF pages to images
+        images = convert_from_path(pdf_path, poppler_path=poppler_path)
+    except Exception as e:
+        st.error(f"pdf2image failed: {e}. Trying alternative extraction using PyMuPDF...")
+        images = []
+        try:
+            # Use PyMuPDF (fitz) as fallback to render pages to images
+            doc = fitz.open(pdf_path)
+            for page in doc:
+                pix = page.get_pixmap()
+                # Convert the pixmap to a PIL image
+                img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+                images.append(img)
+        except Exception as e2:
+            st.error(f"Fallback extraction failed: {e2}")
+            return ""
+    
+    extracted_text = ""
+    for image in images:
+        text = pytesseract.image_to_string(image)
+        extracted_text += text + "\n"
+    return extracted_text
+
 def process_pdf():
-    if "vectors" not in st.session_state or "uploaded_file" not in st.session_state or st.session_state.uploaded_file != uploaded_file:
+    if ("vectors" not in st.session_state or "uploaded_file" not in st.session_state or 
+        st.session_state.uploaded_file != uploaded_file):
         if not uploaded_file:
             st.warning("⚠️ Please upload a PDF file before proceeding.")
             return
@@ -46,21 +84,32 @@ def process_pdf():
         with open(temp_file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
-        # Extract text from PDF
+        # Extract text using PyMuPDFLoader first (for text-based PDFs)
         loader = PyMuPDFLoader(temp_file_path)
         documents = loader.load()
-        os.remove(temp_file_path)
         
-        if not documents:
-            st.error("❌ No content extracted from PDF. Please check the uploaded file.")
-            return
+        # If no text was extracted, try OCR
+        if not documents or all(doc.page_content.strip() == "" for doc in documents):
+            st.info("🛠 No readable text found. Using OCR to extract content...")
+            extracted_text = extract_text_from_images(temp_file_path)
+            
+            if not extracted_text.strip():
+                st.error("❌ OCR could not extract text. Please upload a clearer scanned document.")
+                os.remove(temp_file_path)
+                return
+            
+            # Convert extracted OCR text into LangChain Document objects
+            documents = [Document(page_content=extracted_text)]
+        
+        os.remove(temp_file_path)  # Cleanup temp file
         
         # Create embeddings
         st.session_state.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         final_documents = text_splitter.split_documents(documents)
+        
+        # Ensure proper document format before using FAISS
         st.session_state.vectors = FAISS.from_documents(final_documents, st.session_state.embeddings)
-
         st.success("✅ Vector Store DB is Ready!")
 
 # Process PDF if uploaded
@@ -95,4 +144,3 @@ if user_query:
             for i, doc in enumerate(response.get("context", [])):
                 st.write(doc.page_content)
                 st.write("----------------------------------")
-                

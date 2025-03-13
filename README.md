@@ -1,33 +1,93 @@
-# PDF_Based_llama_model - PDF-Based AI Chatbot with Llama3
+# Scanned PDF Question Answering with Llama3 (ChatGroq)
+
+This project is a **Streamlit-based web application** that allows users to upload **scanned or text-based PDFs**, extract their content, and ask questions based on the document. It uses **Llama3-8b-8192** via **Groq API** for question-answering with **RAG (Retrieval-Augmented Generation)**.
+
+---
+
+## 🚀 Features
+- Upload **scanned** or **text-based** PDFs.
+- Extract text using **OCR (Tesseract)** for scanned documents.
+- Store and retrieve document embeddings using **FAISS**.
+- Ask questions, and get AI-generated answers based on the document's content.
+- Uses **Llama3** via **Groq API** for smart responses.
+
+---
 
 ## 📌 Prerequisites
-- Python 3.10+ installed
-- [Git](https://git-scm.com/downloads) installed
+Make sure you have the following installed:
 
-## 🚀 Installation Steps
+- **Python 3.8+**
+- **pip**
+- **Tesseract OCR** ([Download](https://github.com/UB-Mannheim/tesseract/wiki))
+- **Poppler** (for PDF to image conversion) ([Download](https://github.com/oschwartz10612/poppler-windows/releases))
+- A **Groq API Key** (Get it from [Groq API](https://groq.com))
 
-### 1️⃣ Clone the Repository 
+---
 
-git clone https://github.com/Zain-Ul-Abaiden/PDF_Based_llama_model.git <br>
-cd PDF_Based_llama_model
+## 🛠 Installation
 
-### 2️⃣ Create a Virtual Environment
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/your-username/BigOsoft.git
+   cd BigOsoft
+   ```
+2. **Create a Virtual Environment & Activate It:**
+   ```bash
+   python -m venv llama_env
+   # Activate the environment:
+   # Windows
+   llama_env\Scripts\activate
+   # macOS/Linux
+   source llama_env/bin/activate
+   ```
+3. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Set Up Environment Variables:**
+   - Create a `.env` file in the root directory and add:
+     ```ini
+     GROQ_API_KEY=your_groq_api_key_here
+     ```
 
-python -m venv llama_env <br>
-source llama_env/bin/activate  # On macOS/Linux <br>
-llama_env\Scripts\activate     # On Windows <br>
+---
 
-### 3️⃣ Install Dependencies
+## 🔄 Usage
 
-pip install -r requirements.txt <br>
+1. **Run the Streamlit App:**
+   ```bash
+   streamlit run src/app.py
+   ```
+2. **Upload a PDF.**
+3. **Ask questions** based on the document.
+4. **Get AI-powered answers!**
 
-### 4️⃣ Set Up Environment Variables
+---
 
-Create a .env file in the PDF_Based_llama_model folder and add:
+## 📂 Project Structure
+```
+BigOsoft/
+│-- llama_env/           # Virtual environment (not uploaded to GitHub)
+│-- src/
+│   │-- app.py          # Main application script
+│-- .env                # Stores API keys (not uploaded to GitHub)
+│-- .gitignore          # Git ignore settings
+│-- README.md           # Project documentation
+│-- requirements.txt    # Python dependencies
+```
 
-GROQ_API_KEY=your_api_key_here
+---
 
-### 5️⃣ Run the Streamlit App
+## 📜 License
+This project is licensed under the **MIT License**.
 
-cd src <br>
-streamlit run app.py
+---
+
+## 🤝 Contributing
+Feel free to submit issues or pull requests to improve the project!
+
+---
+
+## 📞 Contact
+- **Author:** Zain Ul Abaiden
+- **GitHub:** [zain-ul-abaiden](https://github.com/zain-ul-abaiden)
